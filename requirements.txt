@@ -1,0 +1,6 @@
+python-dotenv
+openai
+upstash-vector
+llama-index-core==0.10.27
+pymupdf
+llama-index-readers-file

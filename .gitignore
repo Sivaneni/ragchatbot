@@ -2,3 +2,4 @@ __pycache__
 *.env
 lambda_layers/*
 !lambda_layers/requirements.txt
+!lambda_layers/*.zip

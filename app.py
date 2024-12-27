@@ -6,10 +6,15 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import BaseOutputParser
 from langchain.chains import RetrievalQA
 from langchain.llms import OpenAI
-
+import logging
+import json
 def lambda_handler(event, context):
     # TODO implement
-        print(event)
+        logger=logging.getLogger()
+        logger.setLevel(
+             logging.INFO
+          )
+    #print(event)
     # Initialize Upstash Vector Store
 
     # Initialize the embedding model
@@ -29,11 +34,20 @@ def lambda_handler(event, context):
                 retriever=store.as_retriever(), llm_chain=llm_chain, parser_key="lines"
             )
         qa_chain = RetrievalQA.from_chain_type(llm, chain_type="stuff", retriever=retriever)
-        query = event['query']
-        response = qa_chain.run(query)
+        try:
+                
+            body = json.loads(event['body'])
+            query = body['query']
+            response = qa_chain.run(query)
             
-        return {
+            return {
                 'statusCode': 200,
                 'body': response
             }
+        except KeyError as e:
+              return { "statusCode": 400, "body": f"Error: Missing key {str(e)} in input" }
+        except json.JSONDecodeError as e: return { "statusCode": 400, "body": f"Error: Invalid JSON format - {str(e)}" }
+        except Exception as e: 
+              logger.error("Unhandled exception: %s", str(e)) 
+        return { "statusCode": 500, "body": f"Error: An unexpected error occurred - {str(e)}" }
             

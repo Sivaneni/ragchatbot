@@ -4,3 +4,9 @@ upstash-vector
 pymupdf
 langchain-text-splitters
 tiktoken
+boto3
+langchain-community
+jq
+langchain
+langchain-core
+langchain-openai

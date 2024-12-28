@@ -42,12 +42,12 @@ def lambda_handler(event, context):
             
             return {
                 'statusCode': 200,
-                'body': response
+                'rag_response': response
             }
         except KeyError as e:
-              return { "statusCode": 400, "body": f"Error: Missing key {str(e)} in input" }
-        except json.JSONDecodeError as e: return { "statusCode": 400, "body": f"Error: Invalid JSON format - {str(e)}" }
+              return { "statusCode": 400, "rag_response": f"Error: Missing key {str(e)} in input" }
+        except json.JSONDecodeError as e: return { "statusCode": 400, "rag_response": f"Error: Invalid JSON format - {str(e)}" }
         except Exception as e: 
               logger.error("Unhandled exception: %s", str(e)) 
-        return { "statusCode": 500, "body": f"Error: An unexpected error occurred - {str(e)}" }
+        return { "statusCode": 500, "rag_response": f"Error: An unexpected error occurred - {str(e)}" }
             

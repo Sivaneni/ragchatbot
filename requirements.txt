@@ -1,7 +1,6 @@
 python-dotenv
 openai
 upstash-vector
-pymupdf
 langchain-text-splitters
 tiktoken
 boto3
@@ -10,3 +9,5 @@ jq
 langchain
 langchain-core
 langchain-openai
+unstructured
+python-dotenv

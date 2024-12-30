@@ -1,7 +1,6 @@
 import os
 import json
 import boto3
-import fitz
 from openai import OpenAI
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
@@ -56,7 +55,10 @@ def parse_markdown_into_chunks(documents):
 def index_data(bucket,filename):
     try:
 
-            loader = S3FileLoader(bucket, filename)
+            local_file_path = f"/tmp/{filename.split('/')[-1]}"
+            s3_client.download_file(bucket, filename, local_file_path)
+
+            loader = S3FileLoader(bucket,filename,s3_client=s3_client)
             docs=loader.load()
             documents = []
             for doc in docs:
@@ -105,7 +107,7 @@ def lambda_handler(event, context):
         #s3_client.download_file(bucket, key, download_path)
 
 
-        index_data(bucket,filename)
+        index_data(bucket,key)
 
         response.append(f"data for  {filename} ingested and indexed")
 

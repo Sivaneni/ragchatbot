@@ -2,7 +2,6 @@ import os
 import json
 import boto3
 import fitz
-import pdf2md
 from openai import OpenAI
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
@@ -11,6 +10,7 @@ from langchain_text_splitters import (
 from upstash_vector import Index, Vector
 from langchain.document_loaders import JSONLoader,S3FileLoader
 from langchain.text_splitter import CharacterTextSplitter,RecursiveCharacterTextSplitter
+from botocore.exceptions import ClientError
 s3_client = boto3.client("s3")
 oai_client = OpenAI()
 index = Index.from_env()
@@ -53,32 +53,42 @@ def parse_markdown_into_chunks(documents):
     return chunks
 
 
-def index_data(filename):
-    loader = S3FileLoader("agodahotelinfo", filename)
-    docs=loader.load()
-    documents = []
-    for doc in docs:
-         documents.append(doc)
-    
-    # Convert the PDF to markdown
-    # markdown_text = pdf2md.to_markdown(fitz.open(pdf_path))
+def index_data(bucket,filename):
+    try:
 
-    # Load and parse the PDF into chunks
-    chunks = parse_markdown_into_chunks(documents)
+            loader = S3FileLoader(bucket, filename)
+            docs=loader.load()
+            documents = []
+            for doc in docs:
+                documents.append(doc)
+            
+            # Convert the PDF to markdown
+            # markdown_text = pdf2md.to_markdown(fitz.open(pdf_path))
 
-    # Convert the chunks to vector objects
-    vectors = []
-    for chunk in chunks:
-        chunk["metadata"]["doc_id"] = filename
-        chunk_id = f"{filename}_{chunk['id']}"
+            # Load and parse the PDF into chunks
+            chunks = parse_markdown_into_chunks(documents)
 
-        vector = Vector(
-            id=chunk_id, vector=chunk["embedding"], metadata=chunk["metadata"]
-        )
-        vectors.append(vector)
+            # Convert the chunks to vector objects
+            vectors = []
+            for chunk in chunks:
+                chunk["metadata"]["doc_id"] = filename
+                chunk_id = f"{filename}_{chunk['id']}"
 
-    # Upsert the vectors to the index
-    index.upsert(vectors)
+                vector = Vector(
+                    id=chunk_id, vector=chunk["embedding"], metadata=chunk["metadata"]
+                )
+                vectors.append(vector)
+
+            # Upsert the vectors to the index
+            index.upsert(vectors)
+    except ClientError as e:
+         error_code = e.response['Error']['Code'] 
+         if error_code == '404': 
+            print(f"Error: The object {filename} does not exist in bucket {bucket} error is {e}") 
+         else: 
+            print(f"Error: {e}") 
+         return None
+
 
 
 def lambda_handler(event, context):
@@ -95,7 +105,7 @@ def lambda_handler(event, context):
         #s3_client.download_file(bucket, key, download_path)
 
 
-        index_data(filename)
+        index_data(bucket,filename)
 
         response.append(f"data for  {filename} ingested and indexed")
 
